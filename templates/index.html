@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    html {
+        height: 100vh;
+        width: 100%;
+
+    }
+
+    body {
+        height: 100vh;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+    }
+
+    #topBar>div {
+        display: inline-block;
+    }
+
+    #root {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        padding: 1em;
+        /* weird flexbox scroll approach */
+        height: 0px;
+    }
+
+    #topBar {
+        height: 2em;
+    }
+
+    #mainBody {
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+
+    .entry {
+        padding: 0.5em 0;
+        margin-top: 0.7em;
+        border-radius: 0.5em;
+        border-bottom: 1px solid black;
+        border-right: 1px solid black;
+
+    }
+
+    .timeStamp {
+        font-size: 0.8em;
+        font-style: italic;
+        font-weight: bold;
+        padding-bottom: 0.3em;
+    }
+
+    .entryBody {
+        font-size: 1.1em;
+        /* to parse \n as new line i.e. <br> */
+        white-space: pre-wrap;
+    }
+
+    .entryTags {
+        font-size: 0.7em;
+        text-align: right;
+        padding: 0 .5em;
+    }
+
+    #textarea {
+        width: 100%;
+        height: 10em;
+    }
+
+    #newEntry {
+        height: 10em;
+        padding-top: 0.5em;
+    }
+</style>
+
+</head>
+
+<body>
+
+    <div id="root" class="bg-light card-columns">
+
+        <div id="topBar"></div>
+
+        <div id="mainBody">
+
+            <div class="entry">
+                <div class="timeStamp">23rd December</div>
+                <div class="entryBody"> This a simple diary log</div>
+                <div class="entryTags ">kou, test, hh, ddd</div>
+            </div>
+
+
+            <div class="entry">
+                <div class="timeStamp">23rd December</div>
+                <div class="entryBody"> This a simple diary log</div>
+                <div class="entryTags">kou, test, hh, ddd</div>
+            </div>
+        </div>
+        <div class="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1">&laquo; first</a>
+                    <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                {% endif %}
+        
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+        
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}">next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
+            </span>
+        </div>
+        <div id="newEntry">
+            <textarea name="" id="textarea" cols="30" rows="10" placeholder="Insert new entry"></textarea>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+
+        const url = "/api/todo/"
+        var todoList;
+
+        function searchThis(event) {
+            event.preventDefault()
+            createToDoList(event.target.value)
+        }
+
+
+        // cokie validation
+        function getCookie(name) { // copied from django doc
+            if (!document.cookie) {
+                return null;
+            }
+            const token = document.cookie.split(';')
+                .map(c => c.trim())
+                .filter(c => c.startsWith(name + '='));
+
+            if (token.length === 0) {
+                return null;
+            }
+            return decodeURIComponent(token[0].split('=')[1]);
+        }
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}' //getCookie('csrftoken')
+        }
+
+
+        const re = /(?:^|\W)#(\w+)(?!\w)/g
+        document.getElementById('textarea').onkeydown = (e) => {
+            if (e.keyCode == 13 && e.ctrlKey) {
+                e.preventDefault();
+                // console.log(e.target.value)
+                const val = e.target.value 
+                const tags = [...val.matchAll(re)].map(e=>e[1])
+                // const bodyText = val.replaceAll(re, "") // remove the tags from the text
+                fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        "desc": bodyText,
+                        "tags": tags.join()
+                    })
+                }
+                ).then(function (res) {
+                    // console.log(res)
+                    if (res.status == 201) {
+                        createToDoList()
+                        e.target.value = '' // clear the textarea
+                    }
+                })
+            }
+        }
+
+
+        // function logOutUser() {
+        //     fetch('/logout/', {
+        //         method: 'POST',
+        //         headers: {
+        //             'X-CSRFToken': '{{ csrf_token }}' //getCookie('csrftoken')
+        //         },
+        //         data: {}
+        //     }).then(function (res) {
+        //         window.location.href = '/'
+        //     }
+        //     )
+        // }
+
+
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleString('en-US', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            })
+        }
+
+
+        // GET request, list all todos
+        function createToDoList(searchparams) {
+            let slug = searchparams != undefined ? `?search=${searchparams}` : ''
+            fetch(url + slug).then(res => res.json()).then(function (data) {
+
+                const elem = document.getElementById('mainBody')
+                const result = data.results
+                const next = data.next
+                const prev = data.previous
+                console.log(data)
+                // keep the tags inside and hide them when inserting the html element
+                elem.innerHTML = result.map(el =>
+                    `<div class="entry">
+                        <div class="timeStamp">${formatDate(el.created)}</div>
+                        <div class="entryBody"> ${el.desc.replaceAll(re, "")}</div>
+                        <div class="entryTags">${el.tags}</div>
+                    </div>`).join('\n')
+
+                elem.scrollTop = elem.scrollHeight - elem.clientHeight;
+            })
+        }
+        createToDoList()
+
+
+
+
+
+        // // PUT request , modify a entry 
+
+        // // checking a entry
+        // function checkToDo(id) {
+        //     fetch(url + `${id}/`).then(res => res.json()).then(function (res) {
+
+        //         comStat = !res.completed
+        //         fetch(url + `${id}/`, {
+        //             method: "PUT",
+        //             headers: {
+        //                 'Content-Type': 'application/json',
+        //                 'X-CSRFToken': '{{ csrf_token }}'//getCookie('csrftoken')
+        //             },
+        //             body: JSON.stringify({
+        //                 'completed': comStat,
+        //                 'datecompleted': comStat ? new Date().toISOString() : null
+        //             })
+        //         }).then(function (ret) {
+        //             if (ret.status == 200) {
+        //                 createToDoList()
+        //             }
+        //         })
+        //     })
+
+        // }
+
+
+
+
+
+        // // DELETE request, remove a entry
+        // function deleteThisTodo(item) {
+        //     fetch(`${url}${item}/`, {
+        //         method: 'DELETE',
+        //         headers: headers,
+        //     }).then(function (response) {
+        //         // console.log(response)
+        //         if (response.status == 204) {
+        //             createToDoList()
+        //         }
+        //     })
+        // }
+
+    </script>
+
+    {% endblock %}

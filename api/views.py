@@ -23,6 +23,22 @@ from rest_framework.generics import GenericAPIView, ListAPIView
 
 
 
+class customPagination(PageNumberPagination):
+    def get_paginated_response(self, data):
+        return Response({
+            'links': {
+               'next': self.get_next_link(),
+               'previous': self.get_previous_link()
+            },
+            'count': self.page.paginator.count,
+            'total_pages': self.page.paginator.num_pages,
+            'results': data
+        })
+
+
+
+
+
 class ToDoViewSets(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
     queryset = ToDos.objects.all()
@@ -31,7 +47,7 @@ class ToDoViewSets(viewsets.ModelViewSet):
     authentication_classes = (SessionAuthentication, BasicAuthentication)
     search_fields= ('desc','tags')
     filter_backends = (filters.SearchFilter,)
-    pagination_class = PageNumberPagination
+    pagination_class = customPagination
     def get_queryset(self):
         return ToDos.objects.filter(user=self.request.user)
 

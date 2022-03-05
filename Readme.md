@@ -1,7 +1,16 @@
 
 
+- [x] Proper database reset
+    `python manage.py migrate --run-syncdb`
+- [x] properly create the registration page
+- [x] hide or show the previous entris for private distraction free private writing experience
+    - [ ] Provide a button to toggle between the two modes
+- [ ] Implement search functionality through page
+- [ ] Implement tags functionality through https://harvesthq.github.io/chosen/
+- [ ] Ignore pagination and for now show the whole page for testing
+    - [ ] Copy the pagination style from the rest framework pages 
+    - [x] Pagination logic for number of pages
 
-2. Tgas button to list all tags
-3. Search > input a term> returns all the details
-4. Show tags and serach only when logged in 
-5. proper innerhtml
+- [ ] Make entries editable
+    - [ ] Make tags and desc editable
+    - [ ] Make the date editable ?? 

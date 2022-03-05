@@ -4,7 +4,7 @@
 {% block content %}
 
 
-<form id="registerInForm" class='w-50 d-none mx-auto'>
+<form id="registerInForm" class='w-50 mx-auto' style="display: none;">
   <div class="form-group">
     <label for="exampleInputPassword1">Username</label>
     <input type="text" class="form-control" placeholder="Username" name='username'>
@@ -42,6 +42,8 @@
 
 <script>
         const url = "/"
+        const loginForm = document.getElementById('logInForm')
+        const registerForm = document.getElementById('registerInForm')
 
         function enableRegister(){
             document.getElementById('logInForm').style.display = 'none'

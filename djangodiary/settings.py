@@ -94,6 +94,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         # 'knox.auth.TokenAuthentication',
     ],
+    
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     # high number for test
     'PAGE_SIZE': 100

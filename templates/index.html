@@ -13,7 +13,7 @@
         display: flex;
         flex-direction: column;
         flex-grow: 1;
-        padding: 1em;
+        padding: 0.5em;
         /* weird flexbox scroll approach */
         height: 0px;
     }
@@ -25,19 +25,29 @@
     #mainBody {
         flex-grow: 1;
         overflow-y: auto;
+        margin-right: 0.1em;
+        
     }
 
     .entry {
-        padding: 0.5em 0;
-        margin-top: 0.7em;
-        border-radius: 0.5em;
-        border-bottom: 1px solid black;
-        border-right: 1px solid black;
-
+        padding: 0;
+        margin-top: 0.5em;
+        border-radius: 0 0.5em;
+        border-bottom: 1px solid rgb(204, 204, 204);
+        border-right: 1px solid rgb(194, 194, 194);
+        transition: background 0.3s ease-in-out;
+    }
+    
+    .entry:hover{
+        
+        background: #f0f0f0;
     }
 
     .timeStamp {
+        text-align: right;
+        padding-right: 1em;
         font-size: 0.8em;
+        color: rgba(0,0,0,0.5);
         font-style: italic;
         font-weight: bold;
         padding-bottom: 0.3em;
@@ -52,12 +62,12 @@
     .entryTags {
         font-size: 0.7em;
         text-align: right;
-        padding: 0 .5em;
+        padding: 0 1em;
     }
 
     #textarea {
         width: 100%;
-        height: 10em;
+        height: 9em;
     }
 
     #newEntry {
@@ -68,6 +78,27 @@
     .distFree{
         transition: opacity 0.3s ease-in-out;
     }
+
+
+    #topBar{
+        width: 100%;
+        height: 3em;
+        padding-bottom: 0.5em;
+        display: flex;
+        flex-direction: row;
+    }
+    #topBar>*{
+        margin: 0 0.3em;
+    }
+
+    #topBar>*:first-child{
+        flex-grow: 1;
+        vertical-align:middle;
+    }
+    #tagSelector{
+        width: 100%;
+    }
+
 </style>
 
 </head>
@@ -76,7 +107,16 @@
 
     <div id="root">
 
-        <div id="topBar" class="distFree"></div>
+        <div id="topBar" class="distFree remove">
+            <input class="form-control" type="text" name="" id="searchInput" style="height: 100%;" placeholder="Search the entries">
+            <button class="btn btn-info" id ='searchButton'>Search</button>
+        </div>
+
+        <div id="tagContainer" class="distFree remove">
+
+            <select class="selectpicker form-control " multiple data-live-search="true" title="Chose a tag" id="tagSelector"></select>
+        </div>
+          
 
         <div id="mainBody" class="distFree">
 
@@ -96,7 +136,7 @@
         <div class="pagination"  class="distFree">
         </div>
         <div id="newEntry">
-            <textarea name="" id="textarea" rows="7"></textarea>
+            <textarea name="" id="textarea" rows="7" class="form-control"></textarea>
         </div>
     </div>
 
@@ -109,18 +149,39 @@
         const url = "/api/entries/"
         var todoList;
 
+        // document.onload=()=>{
+        //     // $('select').selectpicker();
+        //     buildTagList()
+        // }
+
+        function buildTagList(){
+            const elem = document.getElementById('tagSelector');
+            fetch("/listTags").then(res => res.json()).then(function (res) {
+                console.log(res)
+                const inn = res.tags.map(e=>`<option>${e}</option>`).join('')
+                console.log(inn)
+                elem.innerHTML = inn
+            }).then(()=>{
+
+                $(elem).selectpicker('refresh');
+            })
+
+        }
+
         function searchThis(event) {
             event.preventDefault()
-            createToDoList(event.target.value)
+            createEntryList(event.target.value)
+        }
+
+        document.getElementById("searchButton").onclick=()=>{
+            const searchTerm = document.getElementById("searchInput").value
+            createEntryList(searchTerm)
         }
 
 
-        function toggleOpacity(){
-            for (let el of document.getElementsByClassName('distFree') ){
-                el.style.opacity = 0
-            }
+        function test(ev){
+            console.log(ev)
         }
-
 
         // cokie validation
         function getCookie(name) { // copied from django doc
@@ -161,7 +222,7 @@
                 ).then(function (res) {
                     // console.log(res)
                     if (res.status == 201) {
-                        createToDoList()
+                        createEntryList()
                         e.target.value = '' // clear the textarea
                     }
                 })
@@ -197,15 +258,15 @@
 
 
         // GET request, list all todos
-        function createToDoList(searchparams) {
+        function createEntryList(searchparams) {
             let slug = searchparams != undefined ? `?search=${searchparams}` : ''
-            fetch(url + slug).then(res => res.json()).then(function (data) {
+            fetch(url + slug).then(res => res.json()).then(function (res) {
 
                 const elem = document.getElementById('mainBody')
-                const result = data.results
-                const next = data.next
-                const prev = data.previous
-                console.log(data)
+                const result = res.results
+                const next = res.links.next
+                const prev = res.links.previous
+                console.log(res)
                 // keep the tags inside and hide them when inserting the html element
                 elem.innerHTML = result.map(el =>
                     `<div class="entry">
@@ -213,11 +274,10 @@
                         <div class="entryBody"> ${el.desc.replaceAll(re, "")}</div>
                         <div class="entryTags">${el.tags}</div>
                     </div>`).join('\n')
-
                 elem.scrollTop = elem.scrollHeight - elem.clientHeight;
             })
         }
-        createToDoList()
+        createEntryList()
 
 
 
@@ -242,7 +302,7 @@
         //             })
         //         }).then(function (ret) {
         //             if (ret.status == 200) {
-        //                 createToDoList()
+        //                 createEntryList()
         //             }
         //         })
         //     })
@@ -261,10 +321,34 @@
         //     }).then(function (response) {
         //         // console.log(response)
         //         if (response.status == 204) {
-        //             createToDoList()
+        //             createEntryList()
         //         }
         //     })
         // }
+
+
+
+        document.getElementById('searchElem').onclick=()=>{
+            document.getElementById('topBar').classList.toggle('remove')
+        }
+
+        document.getElementById('tagElem').onclick=()=>{
+            if (document.getElementById('tagContainer').classList.contains('remove')) buildTagList();
+            document.getElementById('tagContainer').classList.toggle('remove')
+        }
+
+        // keyboard shortcuts
+        window.onkeyup = (e)=>{
+            if(e.ctrlKey && e.shiftKey){
+                if(e.key==')'){
+                    for (let el of document.getElementsByClassName('distFree') ) el.classList.toggle('hide');
+            
+                }else{
+                    console.log(e.key)
+                }
+            }
+        }
+
 
     </script>
 

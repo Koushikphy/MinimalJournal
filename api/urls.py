@@ -20,7 +20,6 @@ urlpatterns = [
     url('api/', include(router.urls)),
 
 
-
     # user registration api route
     path('register/', views.RegisterUserView.as_view()),
 

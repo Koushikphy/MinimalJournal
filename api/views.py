@@ -20,6 +20,51 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.generics import GenericAPIView, ListAPIView
 from .models import Entries
 from .serializers import LoginSerializer, RegistrationSerializer, EntrySerializer, UserSerializer
+from django.db import models
+
+import operator
+from functools import reduce
+from rest_framework.compat import coreapi, coreschema, distinct
+
+class CustomSearchFilter(filters.SearchFilter):
+    def get_search_fields(self, view, request):
+        print(request.query_params)
+        if request.query_params.get('tags'):
+            return ['tags']
+
+        return super().get_search_fields(view, request)
+    def filter_queryset(self, request, queryset, view):
+        search_fields = self.get_search_fields(view, request)
+        search_terms = self.get_search_terms(request)
+        if not search_fields or not search_terms:
+            return queryset
+
+        orm_lookups = [
+            self.construct_search(str(search_field))
+            for search_field in search_fields
+        ]
+
+        base = queryset
+        conditions = []
+        for search_term in search_terms:
+            queries = [
+                models.Q(**{orm_lookup: search_term})
+                for orm_lookup in orm_lookups
+            ]
+            conditions.append(reduce(operator.or_, queries))
+
+        queryset = queryset.filter(reduce(operator.or_, conditions))
+
+        if self.must_call_distinct(queryset, search_fields):
+            # Filtering against a many-to-many field requires us to
+            # call queryset.distinct() in order to avoid duplicate items
+            # in the resulting queryset.
+            # We try to avoid this if possible, for performance reasons.
+            queryset = distinct(queryset, base)
+        return queryset
+
+    
+# http://127.0.0.1:8000/api/entries/?search=new&tags=new # the last new does not matter
 
 
 
@@ -46,7 +91,7 @@ class EntryViewSets(viewsets.ModelViewSet):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     authentication_classes = (SessionAuthentication, BasicAuthentication)
     search_fields= ('desc','tags')
-    filter_backends = (filters.SearchFilter,)
+    filter_backends = (CustomSearchFilter,)
     pagination_class = customPagination
     def get_queryset(self):
         return Entries.objects.filter(user=self.request.user)
@@ -124,6 +169,7 @@ class LoginUserView(generics.GenericAPIView):
 def listTags(request):
     queryset = Entries.objects.values_list('tags')
     tags = {k.strip() for j in queryset for i in j for k in i.split(',')}
+    tags = [x for x in tags if x]
     return Response({'tags':tags})
 
 

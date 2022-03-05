@@ -9,7 +9,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 
 
 # tag is not requires at this momoneet we will just search throughthe desc field initiall
-class ToDos(models.Model):
+class Entries(models.Model):
     desc = models.TextField(blank=True)
     created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)

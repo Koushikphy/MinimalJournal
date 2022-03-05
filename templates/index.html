@@ -3,20 +3,7 @@
 {% block content %}
 
 <style>
-    html {
-        height: 100vh;
-        width: 100%;
 
-    }
-
-    body {
-        height: 100vh;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        margin: 0;
-        padding: 0;
-    }
 
     #topBar>div {
         display: inline-block;
@@ -31,9 +18,9 @@
         height: 0px;
     }
 
-    #topBar {
-        height: 2em;
-    }
+    /* #topBar {
+        min-height: 2em;
+    } */
 
     #mainBody {
         flex-grow: 1;
@@ -119,7 +106,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
 
-        const url = "/api/todo/"
+        const url = "/api/entries/"
         var todoList;
 
         function searchThis(event) {

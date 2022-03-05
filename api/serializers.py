@@ -1,18 +1,18 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.db.models import fields
+# from django.db.models import fields
 from django.db.models.fields import files
 from rest_framework import serializers
-from .models import ToDos
+from .models import Entries
 # Create your views here.
 from django.contrib.auth import authenticate, login
 
 
 
-class ToDoSerializer(serializers.ModelSerializer):
+class EntrySerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = ToDos
+        model = Entries
         # fields = '__all__'
         exclude = ['user']
 
@@ -26,7 +26,7 @@ class ToDoSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model =User
-        fields = ('username', 'email', 'id')
+        fields = ('username', 'email', 'id') #noqa
         # fields = '__all__'
 
 
@@ -34,7 +34,7 @@ class UserSerializer(serializers.ModelSerializer):
 class RegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model =User
-        fields = ('username', 'email', 'id', 'password')
+        fields = ('username', 'email', 'id', 'password') #noqa
         extra_kwargs={'password':{
             'write_only' : True
         }}

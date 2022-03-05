@@ -1,9 +1,7 @@
 from django.contrib.auth.models import User
 from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 from django.utils.regex_helper import contains
-from .serializers import LoginSerializer, RegistrationSerializer, ToDoSerializer, UserSerializer
 from rest_framework import fields, serializers, viewsets
-from .models import ToDos
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.decorators import api_view
 from django.forms import ModelForm
@@ -20,6 +18,8 @@ from django.utils import timezone
 from rest_framework import filters
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.generics import GenericAPIView, ListAPIView
+from .models import Entries
+from .serializers import LoginSerializer, RegistrationSerializer, EntrySerializer, UserSerializer
 
 
 
@@ -39,17 +39,17 @@ class customPagination(PageNumberPagination):
 
 
 
-class ToDoViewSets(viewsets.ModelViewSet):
+class EntryViewSets(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
-    queryset = ToDos.objects.all()
-    serializer_class = ToDoSerializer
+    queryset = Entries.objects.all()
+    serializer_class = EntrySerializer
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     authentication_classes = (SessionAuthentication, BasicAuthentication)
     search_fields= ('desc','tags')
     filter_backends = (filters.SearchFilter,)
     pagination_class = customPagination
     def get_queryset(self):
-        return ToDos.objects.filter(user=self.request.user)
+        return Entries.objects.filter(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         # request.data[] = 
@@ -122,7 +122,7 @@ class LoginUserView(generics.GenericAPIView):
 # get the list of tags from the comma seperated string
 @api_view(["GET"])
 def listTags(request):
-    queryset = ToDos.objects.values_list('tags')
+    queryset = Entries.objects.values_list('tags')
     tags = {k.strip() for j in queryset for i in j for k in i.split(',')}
     return Response({'tags':tags})
 
@@ -144,4 +144,4 @@ from django.views.generic import ListView
 
 class ContactListView(ListView):
     paginate_by = 2
-    model = ToDos
+    model = Entries

@@ -8,7 +8,7 @@ from rest_framework import routers
 
 router = routers.DefaultRouter()
 router1 = routers.DefaultRouter()
-router.register('todo', views.ToDoViewSets, basename='todo')
+router.register('entries', views.EntryViewSets, basename='entries')
 
 
 

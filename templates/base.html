@@ -61,13 +61,39 @@
         .hide {
             opacity: 0 !important;
         }
+
+        .btn {
+            transition: background-color .5s ease-in-out;
+            border: none !important;
+        }
+
+        /* .navButton:focus,
+        .navButton:focus-visible,
+        .navButton:visited,
+        .navButton:active {
+            background-color: transparent;
+            outline: none;
+            box-shadow: none;
+            border: none;
+        } */
+
+        #tagContainer>div>button {
+            padding-inline: 2em;
+        }
+
+        .theme{
+            background-color: #28a745d4;
+        }
+        .myNav{
+            box-shadow: 0 2px 4px -1px rgb(0 0 0 / 20%), 0 4px 5px 0 rgb(0 0 0 / 14%), 0 1px 10px 0 rgb(0 0 0 / 12%);
+        }
     </style>
 </head>
 
 <body>
 
 
-    <nav class="navbar navbar-expand-md navbar-light bg-warning px-5 distFree">
+    <nav class="navbar navbar-expand-md navbar-light theme px-5 distFree myNav">
 
         <a class="navbar-brand" href="#">
             <span>My Minimalist Diary </span>
@@ -80,9 +106,20 @@
 
             <ul class="navbar-nav ml-auto">
                 {% if user.is_authenticated %}
-                <li class="nav-item"><a class="nav-link" id="tagElem">Tags</a></li>
-                <li class="nav-item"><a class="nav-link" id="searchElem">Search</a></li>
-                <li class="nav-item"><a href="#" onclick="logOutUser()" class="nav-link">Logout</a></li>
+
+                <div id="tagContainer" class="nav-item mr-2">
+                    <select id="tagSelector" class="selectpicker form-control show-tick" data-live-search="true"
+                        title="Chose tag" data-max-options="5"></select>
+                </div>
+
+                <div class="nav-item form-inline mr-2">
+                    <input id="searchInput" class="form-control mr-1" type="search" name=""
+                        style="display: inline; width: auto;" placeholder="Search the entries">
+                    <button id='searchButton' class="btn btn-info" style="display: inline; ">Search</button>
+                </div>
+
+                <li class="nav-item"><button class="btn btn-warning navButton" id="logOutBtn" style="height: 100%;">Logout</button></li>
+
                 {% endif %}
             </ul>
         </div>
@@ -110,7 +147,12 @@
 
     <script>
 
-        function logOutUser() {
+
+
+
+
+
+        document.getElementById('logOutBtn').onclick = () => {
             fetch('/logout/', {
                 method: 'POST',
                 headers: {

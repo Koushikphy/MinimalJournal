@@ -1,3 +1,4 @@
+import django
 from django.contrib.auth.models import User
 from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 from django.utils.regex_helper import contains
@@ -26,42 +27,32 @@ import operator
 from functools import reduce
 from rest_framework.compat import coreapi, coreschema, distinct
 
+
+
 class CustomSearchFilter(filters.SearchFilter):
     def get_search_fields(self, view, request):
-        print(request.query_params)
         if request.query_params.get('tags'):
             return ['tags']
+        else:
+            return ['desc']
 
-        return super().get_search_fields(view, request)
+
     def filter_queryset(self, request, queryset, view):
-        search_fields = self.get_search_fields(view, request)
-        search_terms = self.get_search_terms(request)
-        if not search_fields or not search_terms:
-            return queryset
+        qs = super().filter_queryset(request, queryset, view)
 
-        orm_lookups = [
-            self.construct_search(str(search_field))
-            for search_field in search_fields
-        ]
+        # when only desc don't search through the tags
+        if 'desc' in self.get_search_fields(view, request):
+            # using walrus operator, requires python 3.8<
+            if (searchTerms := self.get_search_terms(request)):
+                print(f'#{searchTerms[0]}.*')
+                qs = qs.exclude(desc__regex=f'#{searchTerms[0]}.*')
 
-        base = queryset
-        conditions = []
-        for search_term in search_terms:
-            queries = [
-                models.Q(**{orm_lookup: search_term})
-                for orm_lookup in orm_lookups
-            ]
-            conditions.append(reduce(operator.or_, queries))
+        return qs
 
-        queryset = queryset.filter(reduce(operator.or_, conditions))
-
-        if self.must_call_distinct(queryset, search_fields):
-            # Filtering against a many-to-many field requires us to
-            # call queryset.distinct() in order to avoid duplicate items
-            # in the resulting queryset.
-            # We try to avoid this if possible, for performance reasons.
-            queryset = distinct(queryset, base)
-        return queryset
+    # In django search filter multiple parameter can be provided with comma, 
+    # but that means the result has to have all the parameter present (`and` operation)
+    # we can modify the `filter_queryset` method of the searchfilter to 
+    # modify the `and` -> `or` operation to have any one of them present
 
     
 # http://127.0.0.1:8000/api/entries/?search=new&tags=new # the last new does not matter
@@ -71,12 +62,15 @@ class CustomSearchFilter(filters.SearchFilter):
 class customPagination(PageNumberPagination):
     def get_paginated_response(self, data):
         return Response({
-            'links': {
-               'next': self.get_next_link(),
-               'previous': self.get_previous_link()
+            "pagination":{
+                'links': {
+                    'next': self.get_next_link(),
+                    'previous': self.get_previous_link()
+                },
+                'current' : self.page.number,
+                'count': self.page.paginator.count,
+                'total_pages': self.page.paginator.num_pages,
             },
-            'count': self.page.paginator.count,
-            'total_pages': self.page.paginator.num_pages,
             'results': data
         })
 
@@ -93,8 +87,9 @@ class EntryViewSets(viewsets.ModelViewSet):
     search_fields= ('desc','tags')
     filter_backends = (CustomSearchFilter,)
     pagination_class = customPagination
+    
     def get_queryset(self):
-        return Entries.objects.filter(user=self.request.user)
+        return Entries.objects.filter(user=self.request.user).order_by('-id')
 
     def create(self, request, *args, **kwargs):
         # request.data[] = 
@@ -165,6 +160,7 @@ class LoginUserView(generics.GenericAPIView):
 
 
 # get the list of tags from the comma seperated string
+# TODO: Impletment a Tags model and query list of tags from there
 @api_view(["GET"])
 def listTags(request):
     queryset = Entries.objects.values_list('tags')
@@ -181,13 +177,3 @@ def index(request):
     else:
         return render(request, 'user.html')
 
-
-
-
-from django.views.generic import ListView
-
-
-
-class ContactListView(ListView):
-    paginate_by = 2
-    model = Entries

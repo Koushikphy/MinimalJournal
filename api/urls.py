@@ -1,10 +1,10 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path,include
 from . import views
-from django.conf.urls import url, include
+# from django.conf.urls import url, include
 from rest_framework import routers
 
-
+admin.site.site_header = 'Minimal Journal Admin Panel'
 
 router = routers.DefaultRouter()
 router1 = routers.DefaultRouter()
@@ -14,10 +14,10 @@ router.register('entries', views.EntryViewSets, basename='entries')
 
 urlpatterns = [
     # home page route
-    url(r'^$',views.index, name='home'),
+    re_path(r'^$',views.index, name='home'),
 
     # route todo query api
-    url('api/', include(router.urls)),
+    re_path('api/', include(router.urls)),
 
 
     # user registration api route

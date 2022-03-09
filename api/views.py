@@ -13,19 +13,13 @@ from rest_framework.authentication import SessionAuthentication, BasicAuthentica
 from rest_framework import generics
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from datetime import datetime
-from django.utils.timezone import now
-from django.utils import timezone
 from rest_framework import filters
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.generics import GenericAPIView, ListAPIView
 from .models import Entries
 from .serializers import LoginSerializer, RegistrationSerializer, EntrySerializer, UserSerializer
-from django.db import models
 
-import operator
-from functools import reduce
-from rest_framework.compat import coreapi, coreschema, distinct
+
 
 
 
@@ -87,6 +81,8 @@ class EntryViewSets(viewsets.ModelViewSet):
     search_fields= ('desc','tags')
     filter_backends = (CustomSearchFilter,)
     pagination_class = customPagination
+
+    
     
     def get_queryset(self):
         return Entries.objects.filter(user=self.request.user).order_by('-id')

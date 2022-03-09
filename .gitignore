@@ -1,3 +1,5 @@
+django
 *.pyc
-media
-db.sqlite3
+# *.lock
+*.db
+.env

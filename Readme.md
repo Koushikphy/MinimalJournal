@@ -1,6 +1,9 @@
 # Minimal Journal
 
-A Journal App/API based on django & django-rest-framework
+[![Version](https://img.shields.io/badge/Web-https://minimaljournal.herokuapp.com/-success.svg)](https://minimaljournal.herokuapp.com/) 
+[![Heorku](https://img.shields.io/badge/Heroku-Deployed-blue.svg?style=flat&logo=heroku)](https://minimaljournal.herokuapp.com//)
+   
+#### A Journal App/API based on django & django-rest-framework
 
 
 **WIP**: *Work in Progress* 
